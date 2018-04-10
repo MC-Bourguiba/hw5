@@ -14,8 +14,10 @@ import PIL, PIL.Image, io
 from django.template import loader
 
 def index(request):
-    date = request.GET['date']
-    n = int(request.GET['n'])
+    #date = request.GET['date']
+    date="2018-03-01"
+    n=100
+    #n = int(request.GET['n'])
     input_json = requests.get('https://ce290-hw5-weather-report.appspot.com/?date='+str(date)).json()
     input_x = input_json['centroid_x']
     input_y = input_json['centroid_y']
@@ -127,4 +129,4 @@ def index(request):
     context= dict()
     context['date']=date
     context['n']=n
-    return render(request,'fast/index.html',context)
+    return HttpResponse("ok")
