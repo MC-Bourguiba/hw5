@@ -143,8 +143,12 @@ def index(request):
     plt.plot(path_x, path_y, color='red')
     im = fig2img(fig)
     draw = ImageDraw.Draw(im)  # create a drawing object that is
-
-
+    # used to draw on the new image
+    red = (255, 255, 255)  # color of our text
+    text_pos = (10, 10)  # top-left position of our text
+    text = "date : "+str(date)+" n : "+str(n)  # text to draw
+    # Now, we'll do the drawing:
+    draw.text(text_pos, text, fill=red)
 
     del draw  # I'm done drawing so I don't need this anymore
 
