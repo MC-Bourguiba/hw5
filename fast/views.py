@@ -48,7 +48,7 @@ def fig2data(fig):
 def index(request):
     date = request.GET['date']
     n = int(request.GET['n'])
-    input_json = requests.get('https://ce290-hw5-weather-report.appspot.com/?date=2018-03-03').json()
+    input_json = requests.get('https://ce290-hw5-weather-report.appspot.com/?date='+str(date)).json()
     input_x = input_json['centroid_x']
     input_y = input_json['centroid_y']
     input_r = input_json['radius']
