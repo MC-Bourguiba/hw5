@@ -1,8 +1,9 @@
 from django.shortcuts import render
 from django.http import HttpResponse
 import numpy as np
+import matplotlib
+matplotlib.use('agg')
 import matplotlib.pyplot as plt
-matplotlib.use('Agg')
 import skfmm
 import pyfmm
 import time
