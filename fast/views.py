@@ -14,11 +14,9 @@ import PIL, PIL.Image, io
 from django.template import loader
 
 def index(request):
-    #date = request.GET['date']
-    date="2018-03-01"
-    n=100
-    #n = int(request.GET['n'])
-    input_json = requests.get('https://ce290-hw5-weather-report.appspot.com/?date='+str(date)).json()
+    date = request.GET['date']
+    n = int(request.GET['n'])
+    input_json = requests.get('https://ce290-hw5-weather-report.appspot.com/?date=2018-03-03').json()
     input_x = input_json['centroid_x']
     input_y = input_json['centroid_y']
     input_r = input_json['radius']
@@ -122,11 +120,11 @@ def index(request):
     """
     import json,mpld3
     single_chart = dict()
-    savefig('fast/static/fast/test2.png')
+    savefig('static/fast/test2.png')
     #result = {'single_chart': json.dumps(mpld3.fig_to_dict(fig))}
     plt.close()
     template = loader.get_template('fast/index.html')
     context= dict()
     context['date']=date
     context['n']=n
-    return HttpResponse("ok")
+    return render(request,'fast/index.html',context)
