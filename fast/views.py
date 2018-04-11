@@ -14,7 +14,37 @@ from pylab import *
 import PIL, PIL.Image, io
 # Create your views here.
 from django.template import loader
+from PIL import Image, ImageDraw
+import numpy as np
 
+def fig2img ( fig ):
+    """
+    @brief Convert a Matplotlib figure to a PIL Image in RGBA format and return it
+    @param fig a matplotlib figure
+    @return a Python Imaging Library ( PIL ) image
+    """
+    # put the figure pixmap into a numpy array
+    buf = fig2data ( fig )
+    w, h, d = buf.shape
+    return Image.frombytes( "RGBA", ( w ,h ), buf.tostring( ) )
+
+def fig2data(fig):
+    """
+    @brief Convert a Matplotlib figure to a 4D numpy array with RGBA channels and return it
+    @param fig a matplotlib figure
+    @return a numpy 3D array of RGBA values
+    """
+    # draw the renderer
+    fig.canvas.draw()
+
+    # Get the RGBA buffer from the figure
+    w, h = fig.canvas.get_width_height()
+    buf = np.fromstring(fig.canvas.tostring_argb(), dtype=np.uint8)
+    buf.shape = (w, h, 4)
+
+    # canvas.tostring_argb give pixmap in ARGB mode. Roll the ALPHA channel to have it in RGBA mode
+    buf = np.roll(buf, 3, axis=2)
+    return buf
 def index(request):
     date = request.GET['date']
     n = int(request.GET['n'])
@@ -22,7 +52,6 @@ def index(request):
     input_x = input_json['centroid_x']
     input_y = input_json['centroid_y']
     input_r = input_json['radius']
-
 
     n_list = []
     dist_list = []
@@ -112,21 +141,17 @@ def index(request):
     ax.set_title('Combined Fast Marching Distance Propagation')
     cbar = fig.colorbar(cax)
     plt.plot(path_x, path_y, color='red')
-    """"
-    buffer = io.StringIO()
-    canvas = pylab.get_current_fig_manager().canvas
-    canvas.draw()
-    pilImage = PIL.Image.frombytes("RGB", canvas.get_width_height(), canvas.tostring_rgb())
-    pilImage.save(buffer, "PNG")
-    pylab.close()
-    """
-    import json,mpld3
-    single_chart = dict()
-    savefig('static/fast/test2.png')
-    #result = {'single_chart': json.dumps(mpld3.fig_to_dict(fig))}
-    plt.close()
-    template = loader.get_template('fast/index.html')
-    context= dict()
-    context['date']=date
-    context['n']=n
-    return render(request,'fast/index.html',context)
+    im = fig2img(fig)
+    draw = ImageDraw.Draw(im)  # create a drawing object that is
+
+
+
+    del draw  # I'm done drawing so I don't need this anymore
+
+    # We need an HttpResponse object with the correct mimetype
+    response = HttpResponse(content_type="image/png")
+    # now, we tell the image to save as a PNG to the
+    # provided file-like object
+    im.save(response, 'PNG')
+
+    return response  # and we're done!
