@@ -22,4 +22,9 @@ urlpatterns = [
     path('fast/', include('fast.urls')),
     path('admin/', admin.site.urls),
 
+
 ]+static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+
+urlpatterns += urlpatterns('',
+        (r'^static/(?P<path>.*)$', 'django.views.static.serve', {'document_root': settings.STATIC_ROOT}),
+    )
