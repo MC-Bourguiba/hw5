@@ -45,67 +45,58 @@ def fig2data(fig):
     # canvas.tostring_argb give pixmap in ARGB mode. Roll the ALPHA channel to have it in RGBA mode
     buf = np.roll(buf, 3, axis=2)
     return buf
+
 def index(request):
     date = request.GET['date']
     n = int(request.GET['n'])
+    import time
+    start_time = time.time()
     input_json = requests.get('https://ce290-hw5-weather-report.appspot.com/?date='+str(date)).json()
     input_x = input_json['centroid_x']
     input_y = input_json['centroid_y']
     input_r = input_json['radius']
 
-    n_list = []
-    dist_list = []
-    t_list = []
-    # Create constants: (i = number 'pixels' per axis for greater resolution and will be reflected in dx and number of grid spaces
+    # Create constants: (s = scaled value of spaces, based on the length input (we use 20 per instructions) and n --> can be applied
     # throughout code by changing the constant multiplied here, storm_ converts the value of inputs into the scale provided by n
-    # and i, time_start is used to get computational complexity)
-    time_start = time.clock()
+    # and s, time_start is used to get computational complexity)
 
-    i = 10 * n
-    storm_x = input_x * (i / n)
-    storm_y = input_y * (i / n)
-    storm_r = input_r * (i / n)
+    s = 20 * n
+    storm_x = 10 * n
+    storm_y = 10 * n
+    storm_r = 5 * n
 
-    # Create meshgrid
-    Y, X = np.meshgrid(np.linspace(0, n, i + 1), np.linspace(0, n, i + 1))
-    phi_o = np.ones((i + 1, i + 1))
+    # Create phi, generated from the origin (following logic of example in https://pythonhosted.org/scikit-fmm/)
+    phi_o = np.ones((s + 1, s + 1))
     phi_o[0][0] = 0
 
-    # Circule mask created and applied to phi_o
-    y, x = np.ogrid[0:i + 1, 0:i + 1]
+    # Open grid created of same size as phi, then circular mask created and applied to phi_o
+    y, x = np.ogrid[0:s + 1, 0:s + 1]
     mask = (x - storm_x) ** 2 + (y - storm_y) ** 2 <= storm_r ** 2
     phi_masked_o = np.ma.MaskedArray(phi_o, mask)
 
     # Calculate the fast marching distance using phi_masked_o
-    skfmm_dist_o = skfmm.distance(phi_masked_o, dx=float(n / i))
-
-    # Commented out plot lines here and below to accurately measure computational complexity of path-finding
-    # plt.contour(skfmm_dist_o, 20)
-    # plt.axis('equal')
-    # plt.show()
+    skfmm_dist_o = skfmm.distance(phi_masked_o, dx=0.1)
 
     # The fast marching approach is done again, except with the "origin" placed at the true destination. This will return the
     # distance between the destination and all other points in the grid
-    phi_d = np.ones((i + 1, i + 1))
-    phi_d[i][i] = 0
+    phi_d = np.ones((s + 1, s + 1))
+    phi_d[s][s] = 0
 
     # Apply same mask from earlier onto new phi_d
     phi_masked_d = np.ma.MaskedArray(phi_d, mask)
 
     # Calculate the fast marching distance using phi_masked_d
-    skfmm_dist_d = skfmm.distance(phi_masked_d, dx=float(n / i))
-
-    # plt.contour(skfmm_dist_d, 20)
-    # plt.axis('equal')
-    # plt.show()
+    skfmm_dist_d = skfmm.distance(phi_masked_d, dx=0.1)
 
     skfmm_dist_t = skfmm_dist_o + skfmm_dist_d
+    path = np.zeros((2, (2 * s)))
 
-    path = np.zeros((2, (2 * i)))
-    dist_travelled = 0
-    k = i
-    j = i
-    steps_available = (2 * i) - 1
+    # Start counters k and j off at the constant s. Instead of changing s, iterate down on k and j until we've reached the origin
+    # Steps available represents the total number of steps horizontal/vertical
+    k = s
+    j = s
+    steps_available = (2 * s) - 1
+
     while (k != 0) & (j != 0):
         val_side = skfmm_dist_t[k - 1][j]
         val_below = skfmm_dist_t[k][j - 1]
@@ -113,29 +104,17 @@ def index(request):
             k = k - 1
             path[0][steps_available] = k
             path[1][steps_available] = j
-
-            # dist_new is the additional distance from previous point to current poinnt, so we get the distance from the
-            # destination (skfmm_dist_d[k][j]) for our new spot and subtract the total distance travelled. Then, total
-            # distance travelled adds on the new portion. This is done similarly in the else statement below:
-
-            dist_new = skfmm_dist_d[k][j] - dist_travelled
-            dist_travelled = dist_travelled + dist_new
         else:
             j = j - 1
             path[0][steps_available] = k
             path[1][steps_available] = j
-
-            dist_new = skfmm_dist_d[k][j] - dist_travelled
-            dist_travelled = dist_travelled + dist_new
-
         steps_available = steps_available - 1
 
-    time_stop = time.clock()
-    time_tot = time_stop - time_start
 
     # Plot the shortest path onto the distance matrix total (combined origin and destination distances)
     path_x = path[1, :]
     path_y = path[0, :]
+    end_time = time.time()
     fig, ax = plt.subplots()
     cax = ax.imshow(skfmm_dist_t, cmap='viridis', origin='lower')
     ax.set_title('Combined Fast Marching Distance Propagation')
@@ -146,7 +125,7 @@ def index(request):
     # used to draw on the new image
     red = (0, 0, 0)  # color of our text
     text_pos = (10, 10)  # top-left position of our text
-    text = "date : "+str(date)+" n : "+str(n)  # text to draw
+    text = "date : "+str(date)+" n : "+str(n) + " response time : " + str(np.round((end_time-start_time)/60,3)) + " min"  # text to draw
     # Now, we'll do the drawing:
     draw.text(text_pos, text, fill=red)
 
