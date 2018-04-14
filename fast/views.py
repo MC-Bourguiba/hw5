@@ -61,9 +61,9 @@ def index(request):
     # and s, time_start is used to get computational complexity)
 
     s = 20 * n
-    storm_x = 10 * n
-    storm_y = 10 * n
-    storm_r = 5 * n
+    storm_x = input_x * n
+    storm_y = input_y * n
+    storm_r = input_r * n
 
     # Create phi, generated from the origin (following logic of example in https://pythonhosted.org/scikit-fmm/)
     phi_o = np.ones((s + 1, s + 1))
@@ -75,7 +75,7 @@ def index(request):
     phi_masked_o = np.ma.MaskedArray(phi_o, mask)
 
     # Calculate the fast marching distance using phi_masked_o
-    skfmm_dist_o = skfmm.distance(phi_masked_o, dx=0.1)
+    skfmm_dist_o = skfmm.distance(phi_masked_o)
 
     # The fast marching approach is done again, except with the "origin" placed at the true destination. This will return the
     # distance between the destination and all other points in the grid
@@ -86,7 +86,7 @@ def index(request):
     phi_masked_d = np.ma.MaskedArray(phi_d, mask)
 
     # Calculate the fast marching distance using phi_masked_d
-    skfmm_dist_d = skfmm.distance(phi_masked_d, dx=0.1)
+    skfmm_dist_d = skfmm.distance(phi_masked_d)
 
     skfmm_dist_t = skfmm_dist_o + skfmm_dist_d
     path = np.zeros((2, (2 * s)))
