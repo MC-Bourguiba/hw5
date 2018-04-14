@@ -60,10 +60,10 @@ def index(request):
     # throughout code by changing the constant multiplied here, storm_ converts the value of inputs into the scale provided by n
     # and s, time_start is used to get computational complexity)
 
-    s = 20 * n
-    storm_x = input_x * n
-    storm_y = input_y * n
-    storm_r = input_r * n
+    s = n
+    storm_x = input_x * n /20
+    storm_y = input_y * n /20
+    storm_r = input_r * n /20
 
     # Create phi, generated from the origin (following logic of example in https://pythonhosted.org/scikit-fmm/)
     phi_o = np.ones((s + 1, s + 1))
